@@ -1,0 +1,57 @@
+name: 'Terraform Import'
+
+on: 
+  [ workflow_dispatch ]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}" 
+  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}" 
+  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}"
+
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: uhg-runner
+  
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: Terraform Init 
+      run: terraform init --reconfigure --backend-config=./backend.conf
+
+    # Import the resource group
+    - name: Import Resource Group
+      run: terraform import module.vnet_subnet.azurerm_resource_group.rg "/subscriptions/07f136e5-d168-4950-a26f-e1a528a1a87c/resourceGroups/myrg-1"
+
+    - name: Terraform Plan
+      id: tf-plan
+      run: |
+        export exitcode=0
+        terraform plan -var-file=./terraform.tfvars -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+        echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+
+        if [ $exitcode -eq 1 ]; then
+          echo Terraform Plan Failed!
+          exit 1
+        else 
+          exit 0
+        fi
+
+    - name: Publish Terraform Plan
+      uses: actions/upload-artifact@v3
+      with:
+        name: tfplan
+        path: tfplan
+        retention-days: 30

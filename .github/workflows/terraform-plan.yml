@@ -1,0 +1,67 @@
+
+name: 'Terraform Plan'
+
+on: 
+  [ push ]
+
+
+#Special permissions required for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}" 
+  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}" 
+  ARM_CLIENT_SECRET: "${{ secrets.AZURE_CLIENT_SECRET }}"
+
+#These environment variables are used by the terraform azure provider to setup OIDD authenticate. 
+jobs:
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: uhg-runner
+  
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Install the latest version of the Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+ 
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init 
+      run: terraform init --reconfigure --backend-config=./backend.conf # Can be passed via `-backend-config=`"key=<blob key name>"` in the `init` command.
+
+    #- name: Terraform Import Resource Group
+    #  run: terraform import --var-file=./backend.conf module.vnet_subnet.azurerm_resource_group.rg "/subscriptions/5f7bdc52-309a-430b-8bef-20e5286300c7/resourceGroups/rg-poc-dev"
+
+
+    # Generates an execution plan for Terraform
+    # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
+    - name: Terraform Plan
+      id: tf-plan
+      run: |
+        export exitcode=0
+        terraform plan -var-file=./terraform.tfvars -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+        echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+
+        if [ $exitcode -eq 1 ]; then
+          echo Terraform Plan Failed!
+          exit 1
+        else 
+          exit 0
+        fi
+
+      # Save plan to artifacts  
+    - name: Publish Terraform Plan
+      uses: actions/upload-artifact@v3
+      with:
+        name: tfplan
+        path: tfplan
+        retention-days: 30
