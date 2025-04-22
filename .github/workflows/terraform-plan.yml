@@ -21,7 +21,7 @@ env:
 jobs:
   terraform-plan:
     name: 'Terraform Plan'
-    runs-on: uhg-runner
+    runs-on: ubuntu-latest
   
     steps:
     # Checkout the repository to the GitHub Actions runner
