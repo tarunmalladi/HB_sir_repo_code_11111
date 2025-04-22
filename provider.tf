@@ -14,6 +14,12 @@ terraform {
       version = "~> 2.3.0"
     }
   }
+  backend "azurerm" {
+    resource_group_name   = "terraform-rg"
+    storage_account_name  = "orxaimterraformsa"
+    container_name        = "tfstate"
+    key                   = "orxaimsa.tfstate"
+  }
 }
 
 
