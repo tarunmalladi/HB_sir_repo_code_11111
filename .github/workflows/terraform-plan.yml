@@ -36,7 +36,7 @@ jobs:
  
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init 
-      run: terraform init --reconfigure --backend-config=./backend.conf # Can be passed via `-backend-config=`"key=<blob key name>"` in the `init` command.
+      run: terraform init # Can be passed via `-backend-config=`"key=<blob key name>"` in the `init` command.
 
     #- name: Terraform Import Resource Group
     #  run: terraform import --var-file=./backend.conf module.vnet_subnet.azurerm_resource_group.rg "/subscriptions/5f7bdc52-309a-430b-8bef-20e5286300c7/resourceGroups/rg-poc-dev"
