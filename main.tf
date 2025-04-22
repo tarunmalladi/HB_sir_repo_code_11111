@@ -5,7 +5,7 @@ module "vnet_subnet" {
   vnet_name               = "orx-aim-prod-vn"
   location                = "Central India"
   cidr_range              = ["10.40.20.0/22"]
-  create_resource_group   = false
+  create_resource_group   = true
   resource_group_name     = "orx-aim-prod-rg"
   resource_group_location = "Central India"
   create_nsg              = true
